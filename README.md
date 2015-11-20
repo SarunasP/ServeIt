@@ -1,2 +1,2 @@
 # ServeIt
-A Framework for Phone-as-Server Games.
+A Framework for Phone-as-Server Games. :)

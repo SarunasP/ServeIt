@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<head>
+<title>Snap It!</title>
+<link href="default.css" rel="stylesheet" type="text/css" />
+<link href="cards.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="snapScript.js"></script>
+<script type="text/javascript" src="client.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+<script type="text/javascript" src="http://davidbau.com/encode/seedrandom.js"></script>
+<script type="text/javascript">
+/*TODO
+		Fix bug with player naming (Does it in order, wrong!);
+		Fix bug with player running out of cards.
+		Optimise code
+		****UPDATE CSS CODE****
+		Find any more bugs.
+*/
+
+
+var pile, deck;
+var pilePlayer = 1;
+var client = new Client();
+var clientsName = [];
+var clientsCards;
+var alreadyUpdated = false;
+var startTime =0;
+var endTime =0;
+var totalTime = 0;
+var deckAvailable = false;
+
+//The createArray function is taken from http://stackoverflow.com/questions/966225/how-can-i-create-a-two-dimensional-array-in-javascript/966938#966938
+function createArray(length) {
+    var arr = new Array(length || 0),
+        i = length;
+
+    if (arguments.length > 1) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        while(i--) arr[length-1 - i] = createArray.apply(this, args);
+    }
+
+    return arr;
+}
+
+//Called when the client joins the server. It asks for the users name, and then emits an "accept" function to
+//the server. If the server accepts the connection, the user will be in the game. In addition, if the client
+//is the host, the host only buttons will be shown.
+function initClient() {
+	playerName = prompt("Please type your name:");
+	client.name = playerName;
+	client.cards = []
+	var obj = {
+		"name":client.name,
+		"cards":client.cards
+	};
+	client.socket.emit("accept", obj);
+	if(client.hostRight){
+		document.getElementById("startGame").style = "visibility:visible";
+		document.getElementById("resetDeckBut").style = "visibility:visible";
+		document.getElementById("dealBut").style = "visibility:visible";
+	}
+	
+}
+
+function resetLog() {
+	document.getElementById("log").innerHTML = "";
+	clientsName = [];
+}
+
+
+function updateLog(id,name){
+	clientsName.push(name);
+	var node = document.createElement("div");
+	var textnode = document.createTextNode(name + " is here");
+	node.id = id;
+	node.appendChild(textnode);
+	document.getElementById("log").appendChild(node);
+}
+
+function initOnClick() {
+	var obj = {
+		"action" : "getInfo"
+	}
+	client.socket.emit("gameOperate", obj);
+	if(client.hostRight){
+		document.getElementById("initGame").style = "visibility:visible";
+		document.getElementById("resetDeckBut").style = "visibility:visible";
+		document.getElementById("dealBut").style = "visibility:visible";
+	}
+}
+
+
+function initialiseDecks() {
+	var obj = {
+		"state" : "1",
+		"time" : Date.now()
+	}
+	client.socket.emit("changeState", obj);
+	
+}
+
+function init(timeSeed){
+	Math.seedrandom(timeSeed);
+	pile     = new Stack();
+	deck     = new Stack();
+	pilePlayer = 1;
+	deck.makeDeck(1 + (Math.floor((client.totalClients - 2) / 3)));
+	displayDeck();
+}
+
+function shuffle() {
+	deck.shuffle(1);
+	displayDeck();
+}
+
+
+function dealOnClick() {
+	if(deck.cardCount() != 0){
+		var obj = {
+			"action" :"shuffle"
+		}
+		client.socket.emit("gameOperate", obj);
+	
+		var obj = {
+			"action" : "getInfo"
+		}
+		client.socket.emit("gameOperate", obj);
+		
+		var obj = {
+			"action" : "deal"
+		}
+		client.socket.emit("gameOperate", obj);
+	}
+}
+
+function deal() {
+	clientsCards = createArray(client.totalClients, 0);
+	var i;
+	var noCards = "";
+	var hasCards = "card card-hearts card-a card-facedown";
+	//Deals out all the cards to the player, one at a time, as you should.
+	while(deck.cardCount() != 0){
+		for(i = 0; i < client.totalClients && deck.cardCount() != 0; i++){
+			clientsCards[i].push	(deck.deal());
+		}
+	}
+	document.getElementById("deckCard").className = noCards;
+	document.getElementById("youCardBack").className = hasCards;
+	var obj = {
+		"action" : "updateCards",
+		"cards" : clientsCards
+	}
+	alreadyUpdated = false;
+	client.socket.emit("gameOperate", obj);
+	display(true);
+}
+
+
+function updateCards(newClientCards){
+	if(!alreadyUpdated){
+		while(deck.cardCount() != 0){
+			deck.deal();
+		}
+		clientsCards = newClientCards;
+		display(true);
+		alreadyUpdated = true;
+	}
+}
+
+function addPile() {
+	var noCards = "";
+	var hasCards = "card card-hearts card-a card-facedown";
+	var cardChange = new Card;
+	var cardToAdd = new Card;
+	cardChange = document.getElementById("pileTop").className;
+	pile.addCard(clientsCards[pilePlayer-1].shift());
+	pilePlayer++;
+	if(pilePlayer > client.totalClients){
+		pilePlayer = 1;
+	}
+	if(pilePlayer == client.currentClient) {
+		document.getElementById("yourTurn").style = "visibility:visible";
+	} else {
+		document.getElementById("yourTurn").style = "visibility:hidden";
+	}
+	document.getElementById("youCardBack").className = hasCards;
+	cardToAdd = pile.getLastElement();
+	pile.addCard(cardToAdd);
+	if(clientsCards[pilePlayer-1].length == 0) {
+		document.getElementById("youCardBack").className = noCards;
+	}
+	document.getElementById("pileBack").className = cardChange;
+	document.getElementById("pileTop").className = cardToAdd;
+	if(isSnap()){
+		console.log("Snappin it up");
+		startTime = new Date().getTime();
+	} else {
+		startTime = 0;
+	}
+	display(false);
+}
+
+function isSnap(){
+	if(pile.cardCount() > 1){
+		var card1Rank = pile.getRank(pile.getCard(pile.cardCount() - 1));
+		var card2Rank = pile.getRank(pile.getCard(pile.cardCount() - 2));
+		return (card1Rank == card2Rank);
+	}
+	return false;
+}
+
+function addPileOnClick() {
+	var allowed = checkDealPlayer();
+	if(allowed){
+		var obj = {
+			"action" : "addCardToPile"
+		}
+		client.socket.emit("gameOperate", obj);
+	}
+}
+
+function checkDealPlayer(){
+	var noCards = "";
+	var hasCards = "card card-hearts card-a card-facedown";
+	//Checks if every players hand is empty or not. If it is, and there is not a snap in the last two cards, the game restarts.
+	var originalPlayer = pilePlayer
+	var firstGoThrough = true;
+	while(clientsCards[pilePlayer - 1].length == 0){
+		if(firstGoThrough){
+			firstGoThrough = false;
+		} else {
+			if(pilePlayer == originalPlayer){
+				if(!isSnap()){
+					document.getElementById("pileBack").className = noCards;
+					document.getElementById("pileTop").className = noCards;
+					document.getElementById("youCardBack").className = noCards;
+					deck.combine(pile);
+					document.getElementById("deckCard").className = hasCards;
+					displayDeck();
+					return false;
+				} else {
+					return false;
+				}
+
+			}
+			pilePlayer++;
+			if(pilePlayer > client.totalClients){
+				pilePlayer = 1;
+			}
+		}
+	}
+	if(client.clientNumber == pilePlayer) {
+		return true;
+	} else {
+		alert("It's not your turn yet! Sorry!");
+		return false;
+	}
+}
+
+function resetOnClick() {
+	var obj = {
+		"action" : "reset"
+	}
+	client.socket.emit("gameOperate", obj);
+}
+	
+function reset() {
+	for(i = 1; i <= numPlayers; i++){
+		deck.combine(clientCards[i]);
+	}
+	deck.combine(pile);
+	pilePlayer = 1;
+	displayDeck();
+}
+
+function snapOnClick() {
+	if(startTime != 0){
+		startTime = 0;
+		var obj = {
+			"action" : "successSnap",
+			"playerNumber" : (client.clientNumber - 1),
+			"timeTaken" : totalTime
+		}
+		client.socket.emit("gameOperate", obj);
+	} else {
+		var obj = {
+			"action" : "failureSnap",
+			"playerNumber" : (client.clientNumber - 1)
+		}
+		client.socket.emit("gameOperate", obj);
+	}
+}
+
+function failureSnap(failedPlayer) {
+	var currentPlayer = 0;
+	var test = 0;
+	while(pile.cardCount() != 0){
+		document.getElementById("pileTop").className = "";
+		document.getElementById("pileBack").className = "";
+		if(currentPlayer == failedPlayer){
+			currentPlayer++;
+		} else {
+			clientsCards[currentPlayer].push(pile.deal());
+			currentPlayer++;
+		}
+		if(currentPlayer >= client.totalClients){
+			currentPlayer = 0;
+		}
+	}
+	display(false);
+}
+
+function successSnap(successfulPlayer) {
+	alert("Player " + clientsName[successfulPlayer] + " snapped successfully! Congrats " + clientsName[successfulPlayer]);
+	console.log(clientsName[successfulPlayer] + " successfully snapped in " + totalTime);
+	for(i = 0; i < pile.cardCount(); i++){
+		clientsCards[successfulPlayer].push(pile.deal());
+	}
+	document.getElementById("pileTop").className = "";
+	document.getElementById("pileBack").className = "";
+	display(false);
+	document.getElementById
+	checkWinner();
+}
+
+function checkWinner() {
+
+	var winnerNumber = null;
+	for(i = 0; i < client.totalClients; i++){
+		if(clientsCards[i].length != 0){
+			if(winnerNumber != null){
+				return;
+			} else {
+				winnerNumber = i + 1;
+			}
+		}
+	}
+	alert("We have a winner! Player " + winnerNumber + " wins!");
+	reset();
+	display(false);
+}
+
+function displayDeck() {
+	s = ""
+	for (i = 0; i < deck.cardCount(); i++)
+		s += deck.cards[i] + "\n";
+	document.getElementById("deck").value = s;
+	document.getElementById("player1").value = "";
+	document.getElementById("otherPlayers").value = "";
+	document.getElementById("pile").value = "";
+}
+
+function display(firstTime) {
+	s = "";
+	for (i = 0; i < pile.cardCount(); i++){
+		s += pile.cards[i].rank +  " " + pile.cards[i].suit + "\n";
+	}
+	document.getElementById("pile").value = s;
+
+	s = clientsCards[client.clientNumber-1].length;
+	document.getElementById("player1").value = "You have " + s + " cards left!";
+	  
+	s = ""
+	for (i = 0; i < deck.cardCount(); i++){
+		s += deck.cards[i] + "\n";
+	}
+	document.getElementById("deck").value = s;
+	 
+	if(!firstTime){
+		document.getElementById("otherPlayers").value = "";
+	}
+	
+	if(document.getElementById("otherPlayers").value == ""){
+		for(j = 1; j <= clientsCards.length; j++){
+			if( j != client.clientNumber){
+				document.getElementById("otherPlayers").value = document.getElementById("otherPlayers").value + clientsName[(j-1)] + ": " + clientsCards[j-1].length + " cards\n";
+			}
+		}
+	}
+}
+
+</script>
+</head>
+<body>
+
+<div id="container">
+	<div id="links">
+    <div class="cards">
+		<div id="deckCard" class="card card-hearts card-a card-facedown"><span></span></div>
+        <div class="clear"></div>
+    </div>
+		<div id="deckTxt">
+		<b>Deck:</b><br />
+		</div>
+		<div id="deckDiv">
+			<textarea id="deck" readonly rows="7" cols="8"></textarea>
+		</div>
+		<button id = "startGame" onClick = "initOnClick();" style = "visibility:hidden;"> START GAEM </button>
+		
+		<div id = "getCards">
+			<button id = "initGame" onClick = "initialiseDecks();" style = "visibility:hidden;"> Get the Decks! </button>
+		</div>
+        <div id="dealDiv">
+    		<button id="dealBut" onClick="dealOnClick();">Deal</button>
+		</div>
+
+        <div id="resetDeckDiv">
+        	<button id="resetDeckBut" onClick="resetOnClick();" style = "visibility:hidden;">Reset Deck</button>
+		</div>
+	</div>
+	<div id="players">
+		<div class="cards">
+			<div id="youCardBack" class=""><span></span></div>
+			<div class="clear"></div>
+		</div>
+			<form action="" onSubmit="return false;">
+
+				<div id="youDiv">
+					<b>YOU!:</b><br />
+				</div>
+				<div id="player1Div">
+					<textarea id="player1" readonly rows="7" cols="8"></textarea>
+				</div>
+
+				<div id="pileTxtDiv">
+					<b>Pile:</b><br />
+				</div>
+				<div id="pileDiv">
+					<textarea id="pile" readonly rows="7" cols="8"></textarea>
+				</div>
+
+				<div class="cards">
+					<div id="pileBack" class=""><span></span></div>
+					<div id="pileTop" class=""><span></span></div>
+					<div class="clear"></div>
+				</div>
+
+				<div id="otherPlayersTxtDiv">
+					<b>Other Players:</b><br />
+				</div>
+				<div id="otherPlayersDiv">
+					<textarea id="otherPlayers" rows="12" cols="20"></textarea>
+				</div>
+			</form>
+	</div>
+	<div id="buttonsDiv">
+		<div id="pileButDiv">
+			<button id="pileBut" onClick="addPileOnClick();">Pile!</button>
+		</div>
+		<div id = "yourTurn" style = "visibility:hidden"> It is your turn!</div>
+		<div id="snapDiv">
+			<button id="snap" onClick="snapOnClick()">SNAP!</button>
+		</div>
+	</div>
+	<div id = "log" style= "float:right">
+
+</div>
+</div>
+</body>
+</html>

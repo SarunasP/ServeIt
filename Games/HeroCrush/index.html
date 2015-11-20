@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>  
+    <meta charset="utf-8" />
+    <title> Hero Crush</title>
+    <!-- External Libraries -->
+    <script type="text/javascript" src="/js/socket.js"></script>
+    <script type="text/javascript" src="/js/jq.js"></script>
+    <script type="text/javascript" src="/js/phaser.min.js"></script>
+    <script type="text/javascript" src="/js/chance.js"></script>
+    <script type="text/javascript" src="/js/base64.js"></script>
+    <!-- End of External Libraries -->
+    <script type="text/javascript" src="client.js"></script>
+    <script type="text/javascript" src="storage.js"></script>
+    <script type="text/javascript" src="monsterData.js"></script>
+    <script type="text/javascript" src="loadState.js"></script>
+    <script type="text/javascript" src="startState.js"></script>
+    <script type="text/javascript" src="coverState.js"></script>
+	<script type="text/javascript" src="charactor.js"></script>
+	<script type="text/javascript" src="monster.js"></script>
+    <script type="text/javascript" src="chooseState.js"></script>
+    <script type="text/javascript" src="gameState.js"></script>
+    <script type="text/javascript" src="game.js"> </script>
+
+<style type="text/css">
+    #nameDiv{
+        position: absolute;
+        width: 50%;
+        top: 44%;
+        font-family: "Luminari", "Times New Roman",Georgia, Serif;
+        background-color: transparent;
+        outline: none;
+        border: none;
+        color: #76533F;
+        left: 20%;
+        visibility:hidden;
+    }
+
+    #nameContainer{
+        position:absolute;
+        visibility:hidden;
+        left:0;
+        right:0;
+        margin-left:auto;
+        margin-right:auto;
+        min-height:480px;
+        height:100%;
+    }
+</style>
+
+
+</head>
+<div id="nameContainer">
+<input id = "nameDiv" type="text"  maxlength="20" readonly/>
+</div>
+<script type="text/javascript">
+    window.onresize = resize();
+    function resize(){
+        var height = document.getElementById("nameContainer").clientHeight;
+        document.getElementById("nameContainer").style.width = height/3 *2 + "px";
+    }
+</script>
+<body style="background-color:black;margin:0;">
+
+</body>  
+</html>  

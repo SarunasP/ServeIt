@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TapIt!</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<link rel ="stylesheet" type = "text/css" href = "style.css">
+	<script src="/external_scripts/seedrandom.js"></script>
+    <script src="/external_scripts/socket.js"></script>
+	<script type="text/javascript" src="client.js"></script>
+	</head>
+<script>
+
+var clickedTime;
+var createdTime;
+var reactionTime;
+var userName;
+var client = new Client();
+var clientNames = [];
+
+function init(timeSeed) {
+	console.log("timeSeed = " + timeSeed);
+	Math.seedrandom(timeSeed);
+	document.getElementById("numPlayersText").style = "visibility:hidden";
+	makeBox();
+}
+
+function resetLog() {
+	clientNames = [];
+}
+
+function updateLog(name) {
+	clientNames.push(name);
+	updateNumPlayers();
+}
+
+function updateNumPlayers() {
+	document.getElementById("numPlayers").innerHTML = clientNames.length;
+}
+
+function makeBox() {
+  var time = Math.random() * 5000;
+
+
+  setTimeout(function(){
+
+    if(Math.random() > 0.5){
+      document.getElementById("box").style.borderRadius="100px";
+    } else {
+      document.getElementById("box").style.borderRadius="50px";
+    }
+	
+	boxHeight = document.getElementById("container").clientHeight;
+	boxWidth  = document.getElementById("container").clientWidth;
+	
+    var top = Math.random() * boxHeight;
+    var left = Math.random() * boxWidth;
+
+    document.getElementById("box").style.top=top + "px";
+    document.getElementById("box").style.left=left + "px";
+    document.getElementById("box").style.display="block";
+    document.getElementById("box").style.backgroundColor=getRandomColor();
+	
+    createdTime = Date.now();
+  }, time);
+
+}
+
+function submitOnClick() {
+    document.getElementById("form").style.visibility="hidden";
+    userName = document.getElementById("usernameInput").value;
+	var obj = {
+		"name" : userName
+	};
+	client.socket.emit("accept", obj);
+	document.getElementById("numPlayersText").style = "visibility:visible";
+	if(client.hostRight){
+		document.getElementById("startGame").style = "visibility:visible";
+	}
+  }
+
+function startGameOnClick(){
+	document.getElementById("startGame").style = "visibility:hidden";
+	var obj = {
+		"state"  : "1",
+		"time"	 : Date.now()
+	}
+	client.socket.emit("changeState", obj);
+}
+
+function clickBox() {
+    clickedTime = Date.now();
+    reactionTime = (clickedTime - createdTime) / 1000;
+    document.getElementById("box").style = "display=none";
+	var obj = {
+		"action" : "submitTime",
+		"clientNumber" : client.clientNumber,
+		"reactionTime" : reactionTime
+	}
+	client.socket.emit("gameOperate", obj);
+}
+
+function displayWinner(timeTaken, winner){
+	console.log(client.clientNumber);
+	if(client.clientNumber == winner){
+		alert("YOU were the fastest! Congratulations! You took " + timeTaken + " to click on the ball!");
+	} else {
+		alert("Sorry, try again!");
+	}
+	makeBox();
+}
+
+
+  // Below is code from StackOverflow
+  // http://stackoverflow.com/questions/1484506/random-color-generator-in-javascript
+function getRandomColor() {
+    var letters = '0123456789ABCDEF'.split('');
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+</script>
+<body>
+
+  <div id="container">
+
+    <!-- Things I need to do:
+      1) Add a waiting page, if 2 players not connected
+      2) Add the player names somewhere
+    -->
+    <div class = "form" id="form">
+      <h3 class="title">What's your nickname?</h3>
+      <input class="usernameInput" id="usernameInput" type="text" maxlength="14" />
+      <button type="button" value="Submit" id="Submit" onclick = "submitOnClick()">Submit</button>
+    </div>
+
+	<div id = "startButton"> 
+		<button type = "button" value = "Start Game" id = "startGame" style = "visibility: hidden" onclick = "startGameOnClick()">Start Game?</button>
+	</div>
+	<div id = "numPlayersText" style = "visibility: hidden">
+		The number of players available are :
+		<div id = "numPlayers">
+			0
+		</div>
+	</div>
+	  <div id="box" onclick = "clickBox()"></div>
+
+    
+  </div>
+</body>
+</html>

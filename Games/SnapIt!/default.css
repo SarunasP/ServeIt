@@ -1,0 +1,150 @@
+#container {
+	position: fixed;
+	top: 12%;
+	left: 20%;
+    height: 70%;
+	width: 60%;
+	padding: 1%;
+    border: 1px solid #ccc;
+    background-color: #f3f3f3;
+	margin: 0 auto;
+}
+
+#deckTxt {
+}
+
+#deckDiv {
+}
+
+#deckCard {
+	width: 100px;
+	height: 150px;
+}
+
+#deck {
+	resize: none;
+	visibility: hidden;
+}
+
+#shuffleDeckDiv {
+	float: left;	
+	margin-left: 18%;
+	margin-top: -22%;
+}
+
+#shuffleDeckBut {
+	font-family: Verdana;
+	font-size: 30px;
+}
+
+#dealBut {
+	font-family: Verdana;
+	font-size: 30px;
+}
+
+#resetDeckBut {
+	font-family: Verdana;
+	font-size: 30px;
+}
+
+#dealDiv {
+	float: left;
+	margin-left: 55%;
+	margin-top: -22%;
+}
+
+#resetDeckDiv {
+	float: right;
+	margin-left: 70%;
+	margin-top: -22%;
+}
+
+/* Where second line of divs starts*/
+
+#youCardBack{
+	width: 100px;
+	height: 150px;
+	margin-left: 20%;
+	margin-top: 0%;
+}
+
+#youDiv {
+	margin-left: 20%;
+	margin-top: -10%;
+}
+
+#player1Div {
+}
+
+#player1 {
+	resize: none;
+	visibility: hidden;
+}
+
+#pileTxtDiv {
+	margin-left: 45%;
+	margin-top: -29.50%;
+}
+
+#pileDiv {
+	margin-left: 45%;
+	margin-right: 48%;
+}
+
+#pile {
+	resize: none;
+	visibility: hidden;
+}
+
+#pileBack {
+	margin-left: 45%;
+	margin-top: -11.5%;
+	width: 100px;
+	height: 150px;
+}
+
+#pileTop {
+	margin-left: 48%;
+	margin-top: -14.5%;
+	width: 100px;
+	height: 150px;
+}
+
+#otherPlayersTxtDiv {
+	float: left;
+	margin-left: 70%;
+	margin-top: -19%;
+}
+
+#otherPlayersDiv {
+	margin-left: 70%;
+	margin-top: -16%;
+}
+
+#otherPlayers {
+	resize: none;
+}
+
+#pileButDiv {
+	margin-left: 20%;
+	margin-top: 5%;
+}
+
+#pileBut {
+	font-family: Verdana;
+	font-size: 44px;
+	width: 25%;
+}
+
+#snapDiv {
+	margin-top: -6.5%;
+	margin-left: 60%;
+}
+
+#snap {
+	font-family: Verdana;
+	font-size: 44px;
+	font-weight: bold;
+	border-color: #FF2;
+	border-width: 5px;
+}

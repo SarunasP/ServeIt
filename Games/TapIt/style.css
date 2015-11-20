@@ -1,0 +1,63 @@
+body {
+        background-color: #336699;
+      }
+
+      #box {
+        height: 100px;
+        width: 100px;
+        display: none;
+        position: absolute;
+      }
+
+      #container {
+        margin: 0 auto;
+        width: 80%;
+        height: 600px;
+        background-color: white;
+        border-radius: 80px;
+      }
+
+      #timesection {
+        margin: 0 auto;
+        width: 1000px;
+        height: 100%;
+        background-color: white;
+        font-size: 2em;
+        border-radius: 10px;
+        text-align: center;
+      }
+
+      /* Login Page */
+
+
+      .form {
+        position: relative;
+        height: 100px;
+        text-align: center;
+        top: 40%;
+        width: 400px;
+        margin: 0 auto;
+      }
+
+      .form .usernameInput {
+        background-color: transparent;
+        border: none;
+        border-bottom: 2px solid #000;
+        outline: none;
+        text-align: center;
+        width: 400px;
+      }
+
+      .title {
+        font-size: 200%;
+      }
+
+      .usernameInput {
+        font-size: 200%;
+        letter-spacing: 3px;
+      }
+
+      .title,.usernameInput {
+        color: #000;
+        font-weight: 100;
+      }

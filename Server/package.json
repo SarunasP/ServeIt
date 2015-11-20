@@ -1,0 +1,9 @@
+{
+  "name": "serveIt-muti-framwork",
+  "version": "0.0.1",
+  "description": "a mutiple game frame work for html5",
+  "dependencies": {
+    "express": "^4.3.2",
+    "socket.io": "^1.0.2"
+  }
+}
